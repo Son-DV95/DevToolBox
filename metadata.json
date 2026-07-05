@@ -1,0 +1,6 @@
+{
+  "name": "DevToolbox",
+  "description": "A rapid developer utility featuring quick system developer toggles, settings shortcuts, an on-device code playground with AI analysis, and an intuitive logcat viewer.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
