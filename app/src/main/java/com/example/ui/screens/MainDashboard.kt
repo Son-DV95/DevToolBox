@@ -86,7 +86,7 @@ fun MainDashboard(
                     }
                 },
                 actions = {
-                    if (selectedTab == 0) {
+                    if (selectedTab == 0 || selectedTab == 1) {
                         IconButton(
                             onClick = {
                                 viewModel.checkSystemSettings()
@@ -113,20 +113,27 @@ fun MainDashboard(
                     NavigationBarItem(
                         selected = selectedTab == 0,
                         onClick = { selectedTab = 0 },
-                        icon = { Icon(Icons.Default.Dashboard, contentDescription = "Hệ thống") },
-                        label = { Text("Trạng thái") },
+                        icon = { Icon(Icons.Default.DeveloperMode, contentDescription = "Cấu hình") },
+                        label = { Text("Thiết lập") },
                         modifier = Modifier.testTag("tab_status")
                     )
                     NavigationBarItem(
                         selected = selectedTab == 1,
                         onClick = { selectedTab = 1 },
+                        icon = { Icon(Icons.Default.Speed, contentDescription = "Giám sát") },
+                        label = { Text("Giám sát") },
+                        modifier = Modifier.testTag("tab_hardware")
+                    )
+                    NavigationBarItem(
+                        selected = selectedTab == 2,
+                        onClick = { selectedTab = 2 },
                         icon = { Icon(Icons.Default.Code, contentDescription = "Playground") },
                         label = { Text("Code Lab") },
                         modifier = Modifier.testTag("tab_playground")
                     )
                     NavigationBarItem(
-                        selected = selectedTab == 2,
-                        onClick = { selectedTab = 2 },
+                        selected = selectedTab == 3,
+                        onClick = { selectedTab = 3 },
                         icon = { Icon(Icons.Default.Terminal, contentDescription = "Logcat") },
                         label = { Text("Logcat") },
                         modifier = Modifier.testTag("tab_logcat")
@@ -141,20 +148,20 @@ fun MainDashboard(
                 .padding(innerPadding)
         ) {
             when (selectedTab) {
-                0 -> StatusAndShortcutsScreen(viewModel)
-                1 -> CodePlaygroundScreen(viewModel)
-                2 -> LogcatViewerScreen(viewModel)
+                0 -> DeveloperSettingsScreen(viewModel)
+                1 -> HardwareMonitorScreen(viewModel)
+                2 -> CodePlaygroundScreen(viewModel)
+                3 -> LogcatViewerScreen(viewModel)
             }
         }
     }
 }
 
 @Composable
-fun StatusAndShortcutsScreen(viewModel: DevToolboxViewModel) {
+fun DeveloperSettingsScreen(viewModel: DevToolboxViewModel) {
     val context = LocalContext.current
     val isDevEnabled by viewModel.isDeveloperOptionsEnabled.collectAsStateWithLifecycle()
     val isUsbEnabled by viewModel.isUsbDebuggingEnabled.collectAsStateWithLifecycle()
-    val systemInfo by viewModel.systemInfo.collectAsStateWithLifecycle()
 
     LazyColumn(
         modifier = Modifier
@@ -162,76 +169,25 @@ fun StatusAndShortcutsScreen(viewModel: DevToolboxViewModel) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Hero Card Banner with Canvas Background Art
-        item {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(130.dp)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primaryContainer,
-                                MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.8f)
-                            )
-                        )
-                    )
-            ) {
-                // Subtle graphic background
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    drawCircle(
-                        color = Color.White.copy(alpha = 0.1f),
-                        radius = size.width / 3f,
-                        center = androidx.compose.ui.geometry.Offset(size.width, size.height / 2f),
-                        style = Stroke(width = 2.dp.toPx())
-                    )
-                    drawCircle(
-                        color = Color.White.copy(alpha = 0.05f),
-                        radius = size.width / 2f,
-                        center = androidx.compose.ui.geometry.Offset(size.width, size.height / 2f)
-                    )
-                }
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "DevToolbox Trợ Lý",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Tối ưu hóa quy trình làm việc cho các lập trình viên di động nhanh chóng.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                    )
-                }
-            }
-        }
-
-        // System Toggles & Status Block
+        // 1. ĐƯA THIẾT LẬP CHẾ ĐỘ NHÀ PHÁT TRIỂN LÊN ĐẦU TIÊN (System Toggles & Status Block is now FIRST)
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)
                 ),
-                shape = RoundedCornerShape(24.dp)
+                shape = RoundedCornerShape(24.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        text = "Trạng Thái Hệ Thống",
+                        text = "Thiết Lập Chế Độ Nhà Phát Triển",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
                     )
 
                     Row(
@@ -239,7 +195,7 @@ fun StatusAndShortcutsScreen(viewModel: DevToolboxViewModel) {
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         StatusIndicator(
-                            title = "Tùy chọn nhà phát triển",
+                            title = "Chế độ nhà phát triển",
                             isEnabled = isDevEnabled,
                             modifier = Modifier.weight(1f)
                         )
@@ -272,13 +228,98 @@ fun StatusAndShortcutsScreen(viewModel: DevToolboxViewModel) {
                     ) {
                         Icon(Icons.Default.Launch, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Đi Đến Cài Đặt Phát Triển", fontWeight = FontWeight.Bold)
+                        Text("Cài Đặt Chế Độ Nhà Phát Triển", fontWeight = FontWeight.Bold)
                     }
                 }
             }
         }
 
-        // Quick Shortcuts Grid
+        // 2. Welcome/Hero Card Banner with Canvas Background Art
+        item {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(115.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
+                                MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
+                            )
+                        )
+                    )
+            ) {
+                // Subtle graphic background
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    drawCircle(
+                        color = Color.White.copy(alpha = 0.1f),
+                        radius = size.width / 3f,
+                        center = androidx.compose.ui.geometry.Offset(size.width, size.height / 2f),
+                        style = Stroke(width = 2.dp.toPx())
+                    )
+                    drawCircle(
+                        color = Color.White.copy(alpha = 0.05f),
+                        radius = size.width / 2f,
+                        center = androidx.compose.ui.geometry.Offset(size.width, size.height / 2f)
+                    )
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(14.dp),
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "DevToolbox Phím Tắt",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        // Pulsing online badge
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color.White.copy(alpha = 0.25f))
+                                .padding(horizontal = 8.dp, vertical = 3.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .clip(RoundedCornerShape(3.dp))
+                                        .background(Color(0xFF00E676)) // Neon green pulse
+                                )
+                                Text(
+                                    text = "FAST LINK",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Mở nhanh các cấu hình hệ thống ẩn và bật tuỳ chọn nhà phát triển tiện lợi.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+                    )
+                }
+            }
+        }
+
+        // 3. Quick Shortcuts Grid
         item {
             Text(
                 text = "Phím Tắt Hệ Thống Quan Trọng",
@@ -301,16 +342,223 @@ fun StatusAndShortcutsScreen(viewModel: DevToolboxViewModel) {
                 }
             }
         }
+    }
+}
+
+@Composable
+fun HardwareMonitorScreen(viewModel: DevToolboxViewModel) {
+    val systemInfo by viewModel.systemInfo.collectAsStateWithLifecycle()
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Welcome Card / Intro Banner
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.25f)
+                ),
+                shape = RoundedCornerShape(24.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f))
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Speed,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.secondary
+                        )
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Giám Sát Phần Cứng Thời Gian Thực",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Theo dõi các thông số quan trọng của phần cứng bao gồm RAM, CPU, PIN, nhiệt độ và các thông tin thiết bị chi tiết.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            lineHeight = 15.sp
+                        )
+                    }
+                }
+            }
+        }
+
+        // Live Diagnostic Grid (Nhiệt độ, RAM, CPU, PIN, Công suất, Viewport)
+        item {
+            val ramVal = systemInfo["Dung lượng RAM"] ?: "N/A"
+            val pinVal = systemInfo["Trạng thái PIN"] ?: "N/A"
+            val tempVal = systemInfo["Nhiệt độ thiết bị"] ?: "N/A"
+            val cpuVal = systemInfo["Bộ vi xử lý CPU"] ?: "N/A"
+            val powerVal = systemInfo["Công suất sạc"] ?: "N/A"
+            val viewportVal = systemInfo["Viewport màn hình"] ?: "N/A"
+
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = "Giám Sát Phần Cứng & Hiệu Năng",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // RAM Card
+                    val ramPct = try {
+                        val pctStr = ramVal.substringAfter("(").substringBefore("%").trim()
+                        pctStr.toFloat() / 100f
+                    } catch(e: Exception) { 0.5f }
+
+                    DiagnosticTile(
+                        title = "BỘ NHỚ RAM",
+                        value = if (ramVal.contains("/")) ramVal.substringBefore(" rảnh").trim() else "RAM",
+                        subtitle = if (ramVal.contains("(")) "Đã dùng " + ramVal.substringAfter("(").substringBefore("đã dùng").trim() else "Đang phân tích",
+                        icon = Icons.Default.Storage,
+                        accentColor = MaterialTheme.colorScheme.primary, // Glowing Teal
+                        progress = ramPct,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    // Pin Card
+                    val pinPct = try {
+                        val pctStr = pinVal.substringBefore("%").trim()
+                        pctStr.toFloat() / 100f
+                    } catch(e: Exception) { 0.8f }
+
+                    DiagnosticTile(
+                        title = "DUNG LƯỢNG PIN",
+                        value = if (pinVal.contains("%")) pinVal.substringBefore("%").trim() + "%" else "PIN",
+                        subtitle = if (pinVal.contains("(")) pinVal.substringAfter("(").substringBefore(")").trim() else "Bình thường",
+                        icon = Icons.Default.Bolt,
+                        accentColor = Color(0xFF10B981), // Emerald green
+                        progress = pinPct,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // CPU Card
+                    DiagnosticTile(
+                        title = "VI XỬ LÝ CPU",
+                        value = if (cpuVal.contains("nhân")) cpuVal.substringBefore(" nhân").trim() + " Nhân" else "CPU",
+                        subtitle = if (cpuVal.contains("(")) cpuVal.substringAfter("(").substringBefore(")").trim() else "ARM64 ABI",
+                        icon = Icons.Default.DeveloperMode,
+                        accentColor = MaterialTheme.colorScheme.secondary, // Electric Indigo
+                        progress = 0.65f,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    // Temperature Card
+                    val tempNum = try {
+                        tempVal.replace("°C", "").trim().toFloat()
+                    } catch(e: Exception) { 36.5f }
+
+                    val tempColor = when {
+                        tempNum > 42f -> Color(0xFFEF4444) // Orange/Red
+                        tempNum > 36f -> Color(0xFFF59E0B) // Amber
+                        else -> Color(0xFF06B6D4) // Sky Blue
+                    }
+
+                    DiagnosticTile(
+                        title = "NHIỆT ĐỘ",
+                        value = tempVal,
+                        subtitle = when {
+                            tempNum > 42f -> "Nóng / Cần làm mát"
+                            tempNum > 36f -> "Ấm áp / Bình thường"
+                            else -> "Mát mẻ / Ổn định"
+                        },
+                        icon = Icons.Default.WbSunny,
+                        accentColor = tempColor,
+                        progress = (tempNum / 70f).coerceIn(0f, 1f),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Charging Power Card
+                    val isDischarging = powerVal.startsWith("Đang xả:")
+                    val powerValClean = if (isDischarging) {
+                        powerVal.substringAfter("Đang xả:").substringBefore("(").trim()
+                    } else {
+                        powerVal.substringBefore("(").trim()
+                    }
+                    val powerSub = if (powerVal.contains("(")) {
+                        val inner = powerVal.substringAfter("(").substringBefore(")").trim()
+                        if (isDischarging) "$inner (Xả)" else "$inner (Sạc)"
+                    } else {
+                        "Đang xả"
+                    }
+
+                    DiagnosticTile(
+                        title = "CÔNG SUẤT SẠC",
+                        value = powerValClean,
+                        subtitle = powerSub,
+                        icon = Icons.Default.Power,
+                        accentColor = Color(0xFFF59E0B), // Glowing Amber
+                        progress = if (isDischarging) 0.35f else 0.85f,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    // Viewport Card
+                    val dpVal = if (viewportVal.contains("dp")) {
+                        viewportVal.substringBefore("dp").trim() + " dp"
+                    } else {
+                        "Viewport"
+                    }
+                    val viewportSub = if (viewportVal.contains("(")) {
+                        viewportVal.substringAfter("(").substringBefore(")").trim()
+                    } else {
+                        "Màn hình Oppo"
+                    }
+
+                    DiagnosticTile(
+                        title = "VIEWPORT MÀN HÌNH",
+                        value = dpVal,
+                        subtitle = viewportSub,
+                        icon = Icons.Default.AspectRatio,
+                        accentColor = Color(0xFFEC4899), // Electric Pink
+                        progress = 1.0f,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
 
         // Monospace Terminal System Info Block
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF1E1E1E) // Dark terminal background
+                    containerColor = Color(0xFF111827) // Dark terminal background
                 ),
                 shape = RoundedCornerShape(16.dp),
-                border = CardDefaults.outlinedCardBorder()
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -324,7 +572,7 @@ fun StatusAndShortcutsScreen(viewModel: DevToolboxViewModel) {
                             modifier = Modifier
                                 .size(8.dp)
                                 .clip(RoundedCornerShape(4.dp))
-                                .background(Color(0xFF4CAF50))
+                                .background(Color(0xFF2DD4BF))
                         )
                         Text(
                             text = "Thông Tin Thiết Bị",
@@ -345,13 +593,13 @@ fun StatusAndShortcutsScreen(viewModel: DevToolboxViewModel) {
                             Text(
                                 text = "$key:",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFFB0B0B0),
+                                color = Color(0xFF9CA3AF),
                                 fontFamily = FontFamily.Monospace
                             )
                             Text(
                                 text = value,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF4CAF50),
+                                color = Color(0xFF2DD4BF),
                                 fontFamily = FontFamily.Monospace,
                                 fontWeight = FontWeight.Bold
                             )
@@ -960,6 +1208,12 @@ fun LogcatViewerScreen(viewModel: DevToolboxViewModel) {
     val filterLevel by viewModel.logcatFilterLevel.collectAsStateWithLifecycle()
     val isPermissionGranted by viewModel.isLogcatPermissionGranted.collectAsStateWithLifecycle()
 
+    LaunchedEffect(Unit) {
+        if (logLines.isEmpty()) {
+            viewModel.refreshLogcat()
+        }
+    }
+
     val levelFilters = listOf(
         "V" to "Tất cả",
         "D" to "Debug+",
@@ -1267,3 +1521,87 @@ fun LogLineItem(log: LogLine) {
         }
     }
 }
+
+@Composable
+fun DiagnosticTile(
+    title: String,
+    value: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    accentColor: Color,
+    progress: Float,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(135.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
+        ),
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(14.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f),
+                    fontWeight = FontWeight.Bold
+                )
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(accentColor.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = accentColor,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Black,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = accentColor,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            LinearProgressIndicator(
+                progress = progress,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(5.dp)
+                    .clip(RoundedCornerShape(2.5.dp)),
+                color = accentColor,
+                trackColor = accentColor.copy(alpha = 0.12f)
+            )
+        }
+    }
+}
+

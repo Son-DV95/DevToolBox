@@ -2,41 +2,43 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Light Clean Minimalism Colors
-val CleanPrimary = Color(0xFF6750A4)
+// Light Premium Tech Colors
+val CleanPrimary = Color(0xFF0F766E) // Tech Teal
 val CleanOnPrimary = Color(0xFFFFFFFF)
-val CleanPrimaryContainer = Color(0xFFEADDFF)
-val CleanOnPrimaryContainer = Color(0xFF21005D)
+val CleanPrimaryContainer = Color(0xFFCCFBF1) // Soft Pale Mint
+val CleanOnPrimaryContainer = Color(0xFF115E59)
 
-val CleanSecondary = Color(0xFF625B71)
-val CleanSecondaryContainer = Color(0xFFE8DEF8)
-val CleanOnSecondaryContainer = Color(0xFF1D192B)
+val CleanSecondary = Color(0xFF4F46E5) // Royal Indigo
+val CleanSecondaryContainer = Color(0xFFE0E7FF)
+val CleanOnSecondaryContainer = Color(0xFF3730A3)
 
-val CleanTertiary = Color(0xFF7D5260)
-val CleanTertiaryContainer = Color(0xFFFFD8E4)
+val CleanTertiary = Color(0xFF0EA5E9) // Sky Blue
+val CleanTertiaryContainer = Color(0xFFE0F2FE)
 
-val CleanBackground = Color(0xFFFDFBFF)
-val CleanSurface = Color(0xFFFDFBFF)
-val CleanOnBackground = Color(0xFF1C1B1F)
-val CleanOnSurface = Color(0xFF1C1B1F)
+val CleanBackground = Color(0xFFF8FAFC) // Slate Cool Ice
+val CleanSurface = Color(0xFFFFFFFF)
+val CleanOnBackground = Color(0xFF0F172A) // Slate Slate 900
+val CleanOnSurface = Color(0xFF0F172A)
 
-val CleanSurfaceVariant = Color(0xFFE7E0EC)
-val CleanOnSurfaceVariant = Color(0xFF49454F)
-val CleanOutline = Color(0xFF79747E)
+val CleanSurfaceVariant = Color(0xFFF1F5F9)
+val CleanOnSurfaceVariant = Color(0xFF475569)
+val CleanOutline = Color(0xFFCBD5E1)
 
-// Dark Clean Minimalism Colors
-val CleanDarkPrimary = Color(0xFFD0BCFF)
-val CleanDarkOnPrimary = Color(0xFF381E72)
-val CleanDarkPrimaryContainer = Color(0xFF4F378B)
-val CleanDarkOnPrimaryContainer = Color(0xFFEADDFF)
+// Dark Cyber Developer Colors
+val CleanDarkPrimary = Color(0xFF2DD4BF) // Bright Teal/Cyan
+val CleanDarkOnPrimary = Color(0xFF042F2E)
+val CleanDarkPrimaryContainer = Color(0xFF115E59) // Deep Emerald Container
+val CleanDarkOnPrimaryContainer = Color(0xFF99F6E4)
 
-val CleanDarkSecondary = Color(0xFFCCC2DC)
-val CleanDarkSecondaryContainer = Color(0xFF4A4458)
-val CleanDarkOnSecondaryContainer = Color(0xFFE8DEF8)
+val CleanDarkSecondary = Color(0xFF818CF8) // Electric Indigo
+val CleanDarkSecondaryContainer = Color(0xFF312E81)
+val CleanDarkOnSecondaryContainer = Color(0xFFE0E7FF)
 
-val CleanDarkBackground = Color(0xFF141218)
-val CleanDarkSurface = Color(0xFF141218)
-val CleanDarkOnBackground = Color(0xFFE6E1E5)
-val CleanDarkOnSurface = Color(0xFFE6E1E5)
-val CleanDarkSurfaceVariant = Color(0xFF49454F)
-val CleanDarkOnSurfaceVariant = Color(0xFFCAC4D0)
+val CleanDarkBackground = Color(0xFF0B0F19) // Matte Deep Space Navy
+val CleanDarkSurface = Color(0xFF111827) // Obsidian Slate
+val CleanDarkOnBackground = Color(0xFFF3F4F6)
+val CleanDarkOnSurface = Color(0xFFF3F4F6)
+val CleanDarkSurfaceVariant = Color(0xFF1F2937)
+val CleanDarkOnSurfaceVariant = Color(0xFF9CA3AF)
+val CleanDarkOutline = Color(0xFF374151)
+

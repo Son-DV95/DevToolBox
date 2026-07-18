@@ -24,7 +24,8 @@ private val DarkColorScheme =
     onBackground = CleanDarkOnBackground,
     onSurface = CleanDarkOnSurface,
     surfaceVariant = CleanDarkSurfaceVariant,
-    onSurfaceVariant = CleanDarkOnSurfaceVariant
+    onSurfaceVariant = CleanDarkOnSurfaceVariant,
+    outline = CleanDarkOutline
   )
 
 private val LightColorScheme =

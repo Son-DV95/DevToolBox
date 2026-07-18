@@ -140,13 +140,18 @@ class DevToolboxViewModel(application: Application) : AndroidViewModel(applicati
     )
 
     init {
-        checkSystemSettings()
-        refreshLogcat()
-        // Default code snippet
-        loadCodeTemplate("Hello World")
+        // Tối ưu tốc độ mở app: Chạy các truy vấn cấu hình bất đồng bộ trên IO thread
+        viewModelScope.launch(Dispatchers.IO) {
+            checkSystemSettings()
+            // Không chạy refreshLogcat() ở đây nữa để tối ưu tuyệt đối tốc độ mở app!
+            withContext(Dispatchers.Main) {
+                loadCodeTemplate("Hello World")
+            }
+        }
         
-        // Dynamic system info updater (every 3 seconds)
-        viewModelScope.launch(Dispatchers.Main) {
+        // Trì hoãn nhẹ lượt truy vấn phần cứng đầu tiên để UI chính hiển thị ngay lập tức không bị khựng
+        viewModelScope.launch(Dispatchers.IO) {
+            kotlinx.coroutines.delay(1000) // Tăng delay lên 1 giây để mượt mà tuyệt đối lúc khởi động
             while (true) {
                 loadSystemInfo()
                 kotlinx.coroutines.delay(3000)
@@ -155,19 +160,24 @@ class DevToolboxViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun checkSystemSettings() {
-        val resolver = getApplication<Application>().contentResolver
-        try {
-            val devEnabled = Settings.Global.getInt(resolver, Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0) == 1
-            _isDeveloperOptionsEnabled.value = devEnabled
-        } catch (e: Exception) {
-            _isDeveloperOptionsEnabled.value = false
-        }
+        viewModelScope.launch(Dispatchers.IO) {
+            val resolver = getApplication<Application>().contentResolver
+            val devEnabled = try {
+                Settings.Global.getInt(resolver, Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0) == 1
+            } catch (e: Exception) {
+                false
+            }
 
-        try {
-            val adbEnabled = Settings.Global.getInt(resolver, Settings.Global.ADB_ENABLED, 0) == 1
-            _isUsbDebuggingEnabled.value = adbEnabled
-        } catch (e: Exception) {
-            _isUsbDebuggingEnabled.value = false
+            val adbEnabled = try {
+                Settings.Global.getInt(resolver, Settings.Global.ADB_ENABLED, 0) == 1
+            } catch (e: Exception) {
+                false
+            }
+
+            withContext(Dispatchers.Main) {
+                _isDeveloperOptionsEnabled.value = devEnabled
+                _isUsbDebuggingEnabled.value = adbEnabled
+            }
         }
     }
 
@@ -187,9 +197,10 @@ class DevToolboxViewModel(application: Application) : AndroidViewModel(applicati
             "N/A"
         }
 
-        // 2. Battery & Temperature
+        // 2. Battery & Temperature & Charging Wattage
         var batteryPctString = "N/A"
         var tempString = "N/A"
+        var chargingPowerString = "N/A"
         try {
             val intentFilter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
             val batteryStatus = application.registerReceiver(null, intentFilter)
@@ -216,6 +227,37 @@ class DevToolboxViewModel(application: Application) : AndroidViewModel(applicati
             tempString = if (temp >= 0) {
                 String.format("%.1f°C", temp / 10.0)
             } else "N/A"
+
+            // Compute charging/discharging wattage (Công suất sạc)
+            val voltageMv = batteryStatus?.getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1) ?: -1
+            val batteryManager = application.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+            val currentMicroAmps = try {
+                batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)
+            } catch (e: Exception) {
+                0
+            }
+
+            val voltageV = if (voltageMv > 0) {
+                if (voltageMv > 100) voltageMv / 1000.0 else voltageMv.toDouble()
+            } else 0.0
+
+            val currentMa = if (currentMicroAmps != Int.MIN_VALUE) currentMicroAmps / 1000.0 else 0.0
+            val absCurrentMa = Math.abs(currentMa)
+            val wattageW = (absCurrentMa / 1000.0) * voltageV
+
+            chargingPowerString = if (isCharging) {
+                if (wattageW > 0.01) {
+                    String.format("%.2f W (%.0f mA @ %.2f V)", wattageW, absCurrentMa, voltageV)
+                } else {
+                    String.format("%.1f V (%s)", voltageV, if (plugType.isNotEmpty()) plugType else "Đang cắm sạc")
+                }
+            } else {
+                if (wattageW > 0.01) {
+                    String.format("Đang xả: %.2f W (%.0f mA @ %.2f V)", wattageW, absCurrentMa, voltageV)
+                } else {
+                    String.format("%.2f V", voltageV)
+                }
+            }
         } catch (e: Exception) {
             // fallback
         }
@@ -229,12 +271,28 @@ class DevToolboxViewModel(application: Application) : AndroidViewModel(applicati
             "N/A"
         }
 
+        // 4. Screen Viewport
+        val viewportString = try {
+            val displayMetrics = application.resources.displayMetrics
+            val widthPx = displayMetrics.widthPixels
+            val heightPx = displayMetrics.heightPixels
+            val density = displayMetrics.density
+            val densityDpi = displayMetrics.densityDpi
+            val widthDp = (widthPx / density).toInt()
+            val heightDp = (heightPx / density).toInt()
+            "$widthDp x $heightDp dp (${widthPx}x${heightPx} px @ ${density}x, ${densityDpi} dpi)"
+        } catch (e: Exception) {
+            "N/A"
+        }
+
         val info = mapOf(
             "Mẫu thiết bị" to android.os.Build.MODEL,
             "Nhà sản xuất" to android.os.Build.MANUFACTURER,
             "Hệ điều hành" to "Android ${android.os.Build.VERSION.RELEASE} (API ${android.os.Build.VERSION.SDK_INT})",
+            "Viewport màn hình" to viewportString,
             "Dung lượng RAM" to ramString,
             "Trạng thái PIN" to batteryPctString,
+            "Công suất sạc" to chargingPowerString,
             "Nhiệt độ thiết bị" to tempString,
             "Bộ vi xử lý CPU" to cpuString,
             "Mã hiệu Build" to android.os.Build.DISPLAY
