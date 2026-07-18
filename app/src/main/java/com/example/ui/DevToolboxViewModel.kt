@@ -231,7 +231,8 @@ class DevToolboxViewModel(application: Application) : AndroidViewModel(applicati
             // Compute charging/discharging wattage (Công suất sạc)
             val voltageMv = batteryStatus?.getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1) ?: -1
             val batteryManager = application.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
-            val currentMicroAmps = try {
+            
+            val rawCurrent = try {
                 batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)
             } catch (e: Exception) {
                 0
@@ -239,21 +240,57 @@ class DevToolboxViewModel(application: Application) : AndroidViewModel(applicati
 
             val voltageV = if (voltageMv > 0) {
                 if (voltageMv > 100) voltageMv / 1000.0 else voltageMv.toDouble()
-            } else 0.0
+            } else 4.0 // fallback voltage 4V
 
-            val currentMa = if (currentMicroAmps != Int.MIN_VALUE) currentMicroAmps / 1000.0 else 0.0
+            var currentMa = 0.0
+            val rawAbs = Math.abs(rawCurrent.toDouble())
+            var isEstimated = false
+
+            if (rawCurrent != 0 && rawCurrent != Int.MIN_VALUE && rawAbs > 0.01) {
+                // Tự động phát hiện đơn vị của API Android:
+                // Nếu trị tuyệt đối nằm trong khoảng từ 5 đến 15000 -> Thiết bị trả về mA trực tiếp
+                // Nếu trị tuyệt đối lớn hơn 15000 -> Thiết bị trả về uA (microAmps), cần chia cho 1000
+                currentMa = if (rawAbs in 5.0..15000.0) {
+                    rawAbs
+                } else {
+                    rawAbs / 1000.0
+                }
+            }
+
+            // Nếu API hệ thống trả về 0 hoặc lỗi, thử quét hệ thống tập tin sysfs của Linux (Cực kỳ hiệu quả trên Oppo/MediaTek)
+            if (currentMa < 0.1) {
+                val sysFsCurrent = scanSysFsBatteryCurrent()
+                if (sysFsCurrent != null && sysFsCurrent > 0.1) {
+                    currentMa = sysFsCurrent
+                }
+            }
+
+            // Nếu vẫn bằng 0 nhưng thiết bị đang cắm sạc, ước tính dòng điện thực tế theo phương thức sạc
+            if (currentMa < 0.1 && isCharging) {
+                currentMa = when (chargePlug) {
+                    BatteryManager.BATTERY_PLUGGED_USB -> 500.0     // USB sạc thường 2.5W
+                    BatteryManager.BATTERY_PLUGGED_AC -> 1800.0      // Củ sạc AC / nhanh tầm 9W-10W
+                    BatteryManager.BATTERY_PLUGGED_WIRELESS -> 1000.0 // Sạc không dây 5W
+                    else -> 1200.0                                   // Fallback khác
+                }
+                isEstimated = true
+            }
+
             val absCurrentMa = Math.abs(currentMa)
-            val wattageW = (absCurrentMa / 1000.0) * voltageV
+            val wattageW = (absCurrentMa / 1000.0) * (if (voltageV > 0.0) voltageV else 4.0)
 
             chargingPowerString = if (isCharging) {
+                val estPrefix = if (isEstimated) "~" else ""
+                val estSuffix = if (isEstimated) " (Ước tính)" else ""
                 if (wattageW > 0.01) {
-                    String.format("%.2f W (%.0f mA @ %.2f V)", wattageW, absCurrentMa, voltageV)
+                    String.format("%s%.2f W (%s%.0f mA @ %.2f V)%s", estPrefix, wattageW, estPrefix, absCurrentMa, voltageV, estSuffix)
                 } else {
-                    String.format("%.1f V (%s)", voltageV, if (plugType.isNotEmpty()) plugType else "Đang cắm sạc")
+                    String.format("%.2f V (%s)", voltageV, if (plugType.isNotEmpty()) plugType else "Đang cắm sạc")
                 }
             } else {
+                val estPrefix = if (isEstimated) "~" else ""
                 if (wattageW > 0.01) {
-                    String.format("Đang xả: %.2f W (%.0f mA @ %.2f V)", wattageW, absCurrentMa, voltageV)
+                    String.format("Đang xả: %s%.2f W (%s%.0f mA @ %.2f V)", estPrefix, wattageW, estPrefix, absCurrentMa, voltageV)
                 } else {
                     String.format("%.2f V", voltageV)
                 }
@@ -754,5 +791,44 @@ class DevToolboxViewModel(application: Application) : AndroidViewModel(applicati
         zipOutputStream.putNextEntry(entry)
         zipOutputStream.write(content.toByteArray())
         zipOutputStream.closeEntry()
+    }
+
+    private fun scanSysFsBatteryCurrent(): Double? {
+        try {
+            val powerSupplyDir = java.io.File("/sys/class/power_supply")
+            if (powerSupplyDir.exists() && powerSupplyDir.isDirectory) {
+                val subDirs = powerSupplyDir.listFiles() ?: return null
+                for (subDir in subDirs) {
+                    if (subDir.isDirectory) {
+                        val currentFiles = subDir.listFiles { _, name -> 
+                            name.contains("current", ignoreCase = true) || name.contains("amperage", ignoreCase = true)
+                        }
+                        if (currentFiles != null) {
+                            for (file in currentFiles) {
+                                try {
+                                    if (file.exists() && file.canRead()) {
+                                        val text = file.readText().trim()
+                                        val value = text.toDoubleOrNull()
+                                        if (value != null && value != 0.0) {
+                                            val absVal = Math.abs(value)
+                                            return when {
+                                                absVal > 20000.0 -> absVal / 1000.0
+                                                absVal in 10.0..20000.0 -> absVal
+                                                else -> absVal * 1000.0
+                                            }
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    // ignore
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            // ignore
+        }
+        return null
     }
 }
